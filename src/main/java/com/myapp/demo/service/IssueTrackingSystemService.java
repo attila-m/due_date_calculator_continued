@@ -16,13 +16,11 @@ import java.time.LocalTime;
 public class IssueTrackingSystemService {
 
     private static final Logger LOGGER = LogManager.getLogger(IssueTrackingSystemService.class);
-    private ImmutableConfiguration configuration;
     private final LocalTime workStart;
     private final LocalTime workEnd;
     private final long workHours;
 
     IssueTrackingSystemService(@Autowired ImmutableConfiguration configuration) {
-        this.configuration = configuration;
         this.workStart = LocalTime.of(configuration.getWorkStartHour(), 0);
         this.workEnd = LocalTime.of(configuration.getWorkEndHour(), 0);
         this.workHours = configuration.getWorkHours();
@@ -35,47 +33,37 @@ public class IssueTrackingSystemService {
         validateSubmissionDate(submissionDate);
         validateTurnaroundTime(turnaroundTime);
 
-        if (checkIfIssueFitsCurrentDay(turnaroundTime, submissionDate)){
+        if (doesIssueFitCurrentDay(turnaroundTime, submissionDate)){
             duration = duration.plusHours(turnaroundTime.toHours());
         } else {
             duration = duration.plusHours(getRemainderDaysNeededForWorkInHours(turnaroundTime.toHours(), submissionDate));
             duration = duration.plusDays(getFullDaysNeededForWork(turnaroundTime.toHours(), submissionDate.getDayOfWeek()));
         }
 
-        LocalDateTime dueDate = submissionDate.plus(duration);
+        return submissionDate.plus(duration);
 
-        return dueDate;
-    }
-
-    private boolean checkIfIssueFitsCurrentDay(Duration turnaroundTime, LocalDateTime submissionDate) {
-        return turnaroundTime.toHours() <= workHours && submissionDate.plus(turnaroundTime).toLocalTime().compareTo(workEnd) <= 0;
     }
 
     private long getRemainderDaysNeededForWorkInHours(long turnaroundHours, LocalDateTime submissionDate) {
-        long hoursNeededForWork = turnaroundHours % workHours;
         long actualHoursOfWork = 0;
-        LocalDateTime currentTime;
 
-        for (long i = hoursNeededForWork; i > 0;) {
-            currentTime = submissionDate.plus(Duration.ofHours(actualHoursOfWork + 1));
-            if(isWorkingDay(currentTime.getDayOfWeek()) && isWorkingHour(currentTime.toLocalTime())) {
+        for (long i = turnaroundHours % workHours; i > 0;) {
+            if(isWorkingTime(submissionDate.plus(Duration.ofHours(actualHoursOfWork + 1)))) {
                 i--;
             }
             actualHoursOfWork++;
         }
-
         return actualHoursOfWork;
     }
 
     private long getFullDaysNeededForWork(long turnaroundHours, DayOfWeek dayOfWeek) {
-        long daysNeededForWork = turnaroundHours / workHours;
         long actualDaysOfWork = 0;
 
-        for (long i = daysNeededForWork; i > 0;) {
+        for (long i = turnaroundHours / workHours; i > 0;) {
             if (isWorkingDay(dayOfWeek.plus(1))) {
                 i--;
+                actualDaysOfWork += 1;
                 dayOfWeek = dayOfWeek.plus(1);
-                actualDaysOfWork++;
             } else {
                 actualDaysOfWork += 2;
                 dayOfWeek = dayOfWeek.plus(2);
@@ -85,7 +73,7 @@ public class IssueTrackingSystemService {
     }
 
     private void validateSubmissionDate(LocalDateTime submissionDate) throws CalculateDueDateException {
-        if (submissionDate == null || !isWorkingDay(submissionDate.getDayOfWeek()) || !isWorkingHour(submissionDate.toLocalTime())) {
+        if (submissionDate == null || !isWorkingTime(submissionDate)) {
             String errorMessage = submissionDate + " is outside of working hours. Working hours are between 9.00 to 17.00, from Monday to Friday.";
             LOGGER.error(errorMessage);
             throw new CalculateDueDateException(errorMessage);
@@ -100,8 +88,16 @@ public class IssueTrackingSystemService {
         }
     }
 
+    private boolean doesIssueFitCurrentDay(Duration turnaroundTime, LocalDateTime submissionDate) {
+        return turnaroundTime.toHours() <= workHours && submissionDate.plus(turnaroundTime).toLocalTime().compareTo(workEnd) <= 0;
+    }
+
     private boolean isTurnaroundTimeGreaterThanZero(Duration turnaroundTime) {
         return !turnaroundTime.isNegative() && !turnaroundTime.isZero();
+    }
+
+    private boolean isWorkingTime(LocalDateTime time) {
+        return isWorkingDay(time.getDayOfWeek()) && isWorkingHour(time.toLocalTime());
     }
 
     private boolean isWorkingHour(LocalTime time) {
