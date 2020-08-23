@@ -1,3 +1,6 @@
+:exclamation: Emarsys homework continued, for the task completed in 24 hours please see
+https://github.com/attila-m/due_date_calculator :exclamation:
+
 ## Issue tracking system
 
 ### The application
