@@ -6,26 +6,25 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @ConfigurationProperties(prefix = "admin.configuration")
 @ConstructorBinding
 public class ImmutableConfiguration {
-    private final long workStartHour;
-    private final long workEndHour;
+    private final int workStartHour;
+    private final int workEndHour;
     private final long workHours;
 
-    public ImmutableConfiguration(long workStartHour, long workEndHour, long workHours) {
+    public ImmutableConfiguration(int workStartHour, int workEndHour, long workHours) {
         this.workStartHour = workStartHour;
         this.workEndHour = workEndHour;
         this.workHours = workHours;
     }
 
-    public long getWorkStartHour() {
+    public int getWorkStartHour() {
         return workStartHour;
     }
 
-    public long getWorkEndHour() {
+    public int getWorkEndHour() {
         return workEndHour;
     }
 
     public long getWorkHours() {
         return workHours;
     }
-
 }
