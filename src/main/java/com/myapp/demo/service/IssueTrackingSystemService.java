@@ -41,7 +41,6 @@ public class IssueTrackingSystemService {
         }
 
         return submissionDate.plus(duration);
-
     }
 
     private long getRemainderDaysNeededForWorkInHours(long turnaroundHours, LocalDateTime submissionDate) {
