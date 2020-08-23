@@ -5,9 +5,8 @@ import java.util.UUID;
 
 public class Issue {
 
-    String id;
-    LocalDateTime dueDate;
-
+    private String id;
+    private LocalDateTime dueDate;
 
     public Issue(LocalDateTime dueDate) {
         this.id = UUID.randomUUID().toString();
